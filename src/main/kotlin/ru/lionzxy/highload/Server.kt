@@ -1,6 +1,7 @@
 package ru.lionzxy.highload
 
 import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import ru.lionzxy.highload.exceptions.Forbidden
 import ru.lionzxy.highload.exceptions.MethodNotAllowed
 import ru.lionzxy.highload.exceptions.NotFound
@@ -8,6 +9,7 @@ import ru.lionzxy.highload.exceptions.ServerException
 import ru.lionzxy.highload.models.Request
 import ru.lionzxy.highload.models.RequestMethod
 import ru.lionzxy.highload.models.Response
+import ru.lionzxy.highload.utils.HttpdConfig
 import java.io.BufferedOutputStream
 import java.io.File
 import java.net.ServerSocket
@@ -17,23 +19,21 @@ import java.nio.charset.Charset
 var rootFile = File("./")
 
 fun main(args: Array<String>) {
-    var port = 5000
-    val iterrator = args.iterator()
-    while (iterrator.hasNext()) {
-        when (iterrator.next()) {
-            "-p" -> port = iterrator.next().toInt()
-            "-r" -> rootFile = File(iterrator.next())
-        }
-    }
+    val config = HttpdConfig.readDefaultConfig()
+
+    var threadCount = config["cpu_limit"]!!.toInt()
+    val threadExecutor = newFixedThreadPoolContext(threadCount, "highload-corutines")
+
+    var port = config["listen"]!!.toInt()
+    rootFile = File(config["document_root"])
+
     println("Start server on port: $port and static folder: ${rootFile.absoluteFile}")
     val server = ServerSocket(port)
     while (true) {
         val socket = server.accept()
-        launch {
-            try {
+        launch(threadExecutor) {
+            socket.use { socket ->
                 processRequest(socket)
-            } finally {
-                socket.close()
             }
             socket.close()
         }
@@ -67,7 +67,6 @@ fun getResponse(request: Request): Response {
     }
 
     val file = File(rootFile, request.path)
-    println(file.absoluteFile)
     if (!file.exists()) {
         if (request.isIndex) {
             throw Forbidden()
