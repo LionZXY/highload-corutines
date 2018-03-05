@@ -67,6 +67,7 @@ fun getResponse(request: Request): Response {
     }
 
     val file = File(rootFile, request.path)
+    println(file.absoluteFile)
     if (!file.exists()) {
         if (request.isIndex) {
             throw Forbidden()
