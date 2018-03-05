@@ -25,7 +25,7 @@ fun main(args: Array<String>) {
     val threadExecutor = newFixedThreadPoolContext(threadCount, "highload-corutines")
 
     var port = config["listen"]!!.toInt()
-    rootFile = File(config["document_root"])
+    rootFile = File(config["document_root"]?:"/var/www/html")
 
     println("Start server on port: $port and static folder: ${rootFile.absoluteFile}")
     val server = ServerSocket(port)
