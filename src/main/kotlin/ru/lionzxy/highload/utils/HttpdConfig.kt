@@ -12,7 +12,7 @@ class HttpdConfig private constructor(file: File) {
         }
 
         fun readDefaultConfig(): HttpdConfig {
-            return HttpdConfig(File("./httpd.conf"))
+            return HttpdConfig(File("/etc/httpd.conf"))
         }
     }
 
